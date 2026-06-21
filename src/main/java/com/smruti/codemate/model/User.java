@@ -12,12 +12,12 @@ public class User {
     private String name; 
     
     private String email; 
-    private String password; 
+    private String password;
     private String bio; 
 
     private int dailyTarget; 
     private int currentStreak; 
-
+   
     public User() {
 
     }
@@ -44,11 +44,11 @@ public class User {
         this.username = username;
     }
 
-    public String getname() { 
+    public String getName() { 
         return name; 
     }
 
-    public void setname(String name){ 
+    public void setName(String name){ 
         this.name = name; 
     } 
 
