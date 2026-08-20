@@ -1,38 +1,44 @@
 package com.smruti.codemate.model;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
-@Document(collection = "users")
+@Entity
+@Table(name = "users")
 public class User {
+
     @Id
-    private String id; 
-   
-    private String username; 
-    private String name; 
-    
-    private String email; 
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String username;
+    private String name;
+    private String email;
     private String password;
-    private String bio; 
+    private String bio;
 
-    private int dailyTarget; 
-    private int currentStreak; 
-   
+    private int dailyTarget;
+    private int currentStreak;
+
     public User() {
-
     }
 
-    public User(String username, String name, String email, String password, String bio, int dailyTarget, int currentStreak) {
+    public User(String username, String name, String email, String password,
+                String bio, int dailyTarget, int currentStreak) {
+
         this.username = username;
-        this.name = name; 
+        this.name = name;
         this.email = email;
         this.password = password;
-        this.bio = bio; 
+        this.bio = bio;
         this.dailyTarget = dailyTarget;
         this.currentStreak = currentStreak;
     }
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 
@@ -44,13 +50,13 @@ public class User {
         this.username = username;
     }
 
-    public String getName() { 
-        return name; 
+    public String getName() {
+        return name;
     }
 
-    public void setName(String name){ 
-        this.name = name; 
-    } 
+    public void setName(String name) {
+        this.name = name;
+    }
 
     public String getEmail() {
         return email;
@@ -59,7 +65,7 @@ public class User {
     public void setEmail(String email) {
         this.email = email;
     }
-    
+
     public String getPassword() {
         return password;
     }
@@ -68,13 +74,14 @@ public class User {
         this.password = password;
     }
 
-    public String getBio() { 
-        return bio; 
+    public String getBio() {
+        return bio;
     }
-    
-    public void setBio(String bio) { 
-        this.bio = bio; 
+
+    public void setBio(String bio) {
+        this.bio = bio;
     }
+
     public int getDailyTarget() {
         return dailyTarget;
     }
