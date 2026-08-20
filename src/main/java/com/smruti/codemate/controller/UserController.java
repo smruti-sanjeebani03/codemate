@@ -1,11 +1,10 @@
-package com.smruti.codemate.controller; 
+package com.smruti.codemate.controller;
 
-import com.smruti.codemate.model.User; 
-import com.smruti.codemate.repository.UserRepository; 
+import com.smruti.codemate.model.User;
+import com.smruti.codemate.repository.UserRepository;
 import org.springframework.web.bind.annotation.*;
- 
-import java.util.List;
 
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
@@ -28,7 +27,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public User getUserById(@PathVariable String id) {
+    public User getUserById(@PathVariable Long id) {
         return userRepository.findById(id).orElse(null);
     }
 
