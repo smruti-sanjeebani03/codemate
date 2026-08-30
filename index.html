@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CodeMate — Personal Coding Companion</title>
+    <meta name="description" content="Personal coding companion for students and developers - CodeCat AI Coding Companion, Logic &amp; DSA Learning, Dashboard, Daily Coding Target, Streaks &amp; Progress Statistics" />
+    <meta property="og:title" content="CodeMate — Personal Coding Companion" />
+    <meta property="og:description" content="Personal coding companion for students and developers - CodeCat AI Coding Companion, Logic &amp; DSA Learning, Dashboard, Daily Coding Target, Streaks &amp; Progress Statistics" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('codemate_theme') || 'system';
+          var isDark = saved === 'dark' || (saved === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.style.colorScheme = 'dark';
+          } else {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.style.colorScheme = 'light';
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="bg-[#F8FAFC] text-slate-800 dark:bg-slate-950 dark:text-slate-100 antialiased selection:bg-blue-500 selection:text-white min-h-screen transition-colors duration-200">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+

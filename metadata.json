@@ -1,0 +1,7 @@
+{
+  "name": "CodeMate",
+  "description": "Personal coding companion for students and developers - CodeCat AI Coding Companion, Logic & DSA Learning, Dashboard, Daily Coding Target, Streaks & Progress Statistics",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
