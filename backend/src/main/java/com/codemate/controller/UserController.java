@@ -29,8 +29,9 @@ public class UserController {
 
     /**
      * Retrieve the authenticated user profile.
+     * Accessible via GET /api/users/me or /api/users/profile.
      */
-    @GetMapping({"/api/users/profile", "/api/user/profile", "/api/profile"})
+    @GetMapping({"/api/users/me", "/api/users/profile", "/api/user/profile", "/api/profile"})
     public ResponseEntity<UserResponse> getProfile(@AuthenticationPrincipal UserPrincipal principal) {
         User user = userService.getUserById(principal.getId());
         return ResponseEntity.ok(UserResponse.fromEntity(user));

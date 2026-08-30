@@ -647,7 +647,7 @@ async function startServer() {
   });
 
   // Get Current Authenticated User Profile
-  app.get('/api/auth/me', authenticateToken, (req, res) => {
+  app.get(['/api/auth/me', '/api/users/me', '/api/users/profile'], authenticateToken, (req, res) => {
     const user = (req as any).user as User;
     return res.json(sanitizeUser(user));
   });
