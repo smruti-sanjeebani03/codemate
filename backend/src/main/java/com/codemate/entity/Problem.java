@@ -171,6 +171,31 @@ public class Problem {
         this.programmingLanguage = programmingLanguage;
     }
 
+    // Compatibility accessors
+    public String getLanguageUsed() {
+        return programmingLanguage;
+    }
+
+    public void setLanguageUsed(String languageUsed) {
+        this.programmingLanguage = languageUsed;
+    }
+
+    public String getProblemLink() {
+        return problemUrl;
+    }
+
+    public void setProblemLink(String problemLink) {
+        this.problemUrl = problemLink;
+    }
+
+    public Instant getDateSolved() {
+        return solvedAt;
+    }
+
+    public void setDateSolved(Instant dateSolved) {
+        this.solvedAt = dateSolved;
+    }
+
     public Instant getSolvedAt() {
         return solvedAt;
     }

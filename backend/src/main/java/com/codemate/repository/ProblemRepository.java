@@ -29,7 +29,22 @@ public interface ProblemRepository extends JpaRepository<Problem, Long> {
     Optional<Problem> findByIdAndUserId(Long id, Long userId);
 
     /**
-     * Retrieve all problems solved by a specific user with sorting.
+     * Retrieve a problem by its ID and User entity.
+     */
+    Optional<Problem> findByIdAndUser(Long id, com.codemate.entity.User user);
+
+    /**
+     * Retrieve all problems solved by a specific user entity.
+     */
+    List<Problem> findByUser(com.codemate.entity.User user);
+
+    /**
+     * Retrieve all problems solved by a specific user entity with sorting.
+     */
+    List<Problem> findByUser(com.codemate.entity.User user, Sort sort);
+
+    /**
+     * Retrieve all problems solved by a specific user ID with sorting.
      */
     List<Problem> findByUserId(Long userId, Sort sort);
 

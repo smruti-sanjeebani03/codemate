@@ -2,6 +2,7 @@ package com.codemate.dto;
 
 import com.codemate.entity.Category;
 import com.codemate.entity.Difficulty;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -18,6 +19,7 @@ public class CreateProblemRequest {
     private String title;
 
     @Size(max = 1000, message = "Problem URL must not exceed 1000 characters")
+    @JsonAlias({"problemLink", "url"})
     private String problemUrl;
 
     /**
@@ -38,11 +40,13 @@ public class CreateProblemRequest {
 
     @NotBlank(message = "Programming language is required (e.g. Java, Python, C++, TypeScript)")
     @Size(max = 50, message = "Programming language must not exceed 50 characters")
+    @JsonAlias({"languageUsed", "language"})
     private String programmingLanguage;
 
     /**
      * Solved date/time. Defaults to current instant if omitted.
      */
+    @JsonAlias({"dateSolved", "solvedDate"})
     private Instant solvedAt;
 
     public CreateProblemRequest() {

@@ -181,4 +181,54 @@ class ProblemServiceTest {
 
         verify(problemRepository, times(1)).delete(problemA);
     }
+
+    @Test
+    @DisplayName("User A and User B Data Isolation: User A cannot access User B's problem and vice versa")
+    void testBidirectionalUserIsolation() {
+        Problem problemB = new Problem();
+        problemB.setId(200L);
+        problemB.setUser(userB);
+        problemB.setTitle("Course Schedule");
+        problemB.setCategory(Category.DSA);
+        problemB.setDifficulty(Difficulty.MEDIUM);
+        problemB.setProgrammingLanguage("C++");
+
+        when(problemRepository.findById(200L)).thenReturn(Optional.of(problemB));
+        when(problemRepository.findById(100L)).thenReturn(Optional.of(problemA));
+
+        // 1. User A (id=1) cannot GET User B's problem (id=200)
+        assertThrows(AccessDeniedException.class, () -> {
+            problemService.getProblemById(1L, 200L);
+        });
+
+        // 2. User A (id=1) cannot PUT User B's problem (id=200)
+        UpdateProblemRequest tamperRequest = new UpdateProblemRequest();
+        tamperRequest.setTitle("User A Tampered Title");
+        assertThrows(AccessDeniedException.class, () -> {
+            problemService.updateProblem(1L, 200L, tamperRequest);
+        });
+
+        // 3. User A (id=1) cannot DELETE User B's problem (id=200)
+        assertThrows(AccessDeniedException.class, () -> {
+            problemService.deleteProblem(1L, 200L);
+        });
+
+        // 4. User B (id=2) cannot GET User A's problem (id=100)
+        assertThrows(AccessDeniedException.class, () -> {
+            problemService.getProblemById(2L, 100L);
+        });
+
+        // 5. User B (id=2) cannot PUT User A's problem (id=100)
+        assertThrows(AccessDeniedException.class, () -> {
+            problemService.updateProblem(2L, 100L, tamperRequest);
+        });
+
+        // 6. User B (id=2) cannot DELETE User A's problem (id=100)
+        assertThrows(AccessDeniedException.class, () -> {
+            problemService.deleteProblem(2L, 100L);
+        });
+
+        // Verify repository was never called to mutate unowned records
+        verify(problemRepository, never()).delete(problemB);
+    }
 }

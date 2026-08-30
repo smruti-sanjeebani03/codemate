@@ -2,6 +2,7 @@ package com.codemate.dto;
 
 import com.codemate.entity.Category;
 import com.codemate.entity.Difficulty;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.Size;
 
 import java.time.Instant;
@@ -15,6 +16,7 @@ public class UpdateProblemRequest {
     private String title;
 
     @Size(max = 1000, message = "Problem URL must not exceed 1000 characters")
+    @JsonAlias({"problemLink", "url"})
     private String problemUrl;
 
     @Size(max = 100, message = "Platform must not exceed 100 characters")
@@ -28,8 +30,10 @@ public class UpdateProblemRequest {
     private Difficulty difficulty;
 
     @Size(max = 50, message = "Programming language must not exceed 50 characters")
+    @JsonAlias({"languageUsed", "language"})
     private String programmingLanguage;
 
+    @JsonAlias({"dateSolved", "solvedDate"})
     private Instant solvedAt;
 
     public UpdateProblemRequest() {
