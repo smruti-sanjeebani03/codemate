@@ -68,6 +68,7 @@ com\codemate\exception\ErrorResponse.class
 com\codemate\service\AuthService$GoogleTokenPayload.class
 com\codemate\entity\Conversation.class
 com\codemate\dto\HealthResponse.class
+com\codemate\security\AuthenticationConfig.class
 com\codemate\dto\UpdateProblemRequest.class
 com\codemate\exception\AiServiceUnavailableException.class
 com\codemate\exception\EmailAlreadyExistsException.class

@@ -113,7 +113,7 @@ export const AuthConsole = ({ onAuthChange }) => {
     window.location.href = authService.getGoogleOAuthUrl();
   };
 
-  const handleGithubOAuth = () => {
+  const hacndleGithubOAuth = () => {
     setError(null);
     setSuccessMsg(null);
     setLoading(true);

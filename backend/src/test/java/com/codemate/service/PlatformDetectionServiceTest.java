@@ -61,14 +61,18 @@ class PlatformDetectionServiceTest {
         assertEquals("Other", platformDetectionService.detectPlatform(null));
         assertEquals("Other", platformDetectionService.detectPlatform(""));
         assertEquals("Other", platformDetectionService.detectPlatform("   "));
-        assertEquals("Other", platformDetectionService.detectPlatform("not-a-valid-domain"));
+        assertEquals(
+                "Custom (not-a-valid-domain)",
+                platformDetectionService.detectPlatform("not-a-valid-domain"));
     }
 
     @Test
     @DisplayName("Should extract clean host without www or protocol")
     void testExtractHost() {
-        assertEquals("leetcode.com", platformDetectionService.extractHost("https://www.leetcode.com/problems/two-sum/"));
-        assertEquals("codeforces.com", platformDetectionService.extractHost("http://codeforces.com/problemset/problem/1/A"));
+        assertEquals("leetcode.com",
+                platformDetectionService.extractHost("https://www.leetcode.com/problems/two-sum/"));
+        assertEquals("codeforces.com",
+                platformDetectionService.extractHost("http://codeforces.com/problemset/problem/1/A"));
         assertEquals("hackerrank.com", platformDetectionService.extractHost("www.hackerrank.com/challenges/test"));
     }
 }

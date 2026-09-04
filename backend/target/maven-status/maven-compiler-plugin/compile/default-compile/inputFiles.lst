@@ -56,6 +56,7 @@ D:\codemate\backend\src\main\java\com\codemate\repository\package-info.java
 D:\codemate\backend\src\main\java\com\codemate\repository\ProblemRepository.java
 D:\codemate\backend\src\main\java\com\codemate\repository\UserRepository.java
 D:\codemate\backend\src\main\java\com\codemate\repository\UserSettingsRepository.java
+D:\codemate\backend\src\main\java\com\codemate\security\AuthenticationConfig.java
 D:\codemate\backend\src\main\java\com\codemate\security\CustomUserDetailsService.java
 D:\codemate\backend\src\main\java\com\codemate\security\JwtAuthenticationEntryPoint.java
 D:\codemate\backend\src\main\java\com\codemate\security\JwtAuthenticationFilter.java

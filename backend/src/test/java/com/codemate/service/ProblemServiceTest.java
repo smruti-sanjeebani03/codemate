@@ -50,17 +50,17 @@ class ProblemServiceTest {
 
     @BeforeEach
     void setUp() {
-        userA = new User("Smruti Dev", "smruti@codemate.dev", "hashedPassword", AuthProvider.LOCAL);
+        userA = new User();
         userA.setId(1L);
 
-        userB = new User("Alex Chen", "alex@codemate.dev", "hashedPassword", AuthProvider.GOOGLE);
+        userB = new User();
         userB.setId(2L);
 
         problemA = new Problem();
         problemA.setId(100L);
         problemA.setUser(userA);
-        problemA.setTitle("Two Sum");
-        problemA.setProblemUrl("https://leetcode.com/problems/two-sum/");
+        problemA.setTitle("Test Problem");
+        problemA.setProblemUrl("https://leetcode.com/problems/test-problem/");
         problemA.setPlatform("LeetCode");
         problemA.setCategory(Category.DSA);
         problemA.setTopic("Arrays");
@@ -75,14 +75,13 @@ class ProblemServiceTest {
     @DisplayName("Should create problem with auto platform detection for authenticated user")
     void testCreateProblem() {
         CreateProblemRequest request = new CreateProblemRequest(
-                "Two Sum",
+            problemA.getTitle(),
                 "https://leetcode.com/problems/two-sum/",
                 Category.DSA,
                 "Arrays",
                 Difficulty.EASY,
                 "Java",
-                Instant.now()
-        );
+                Instant.now());
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(userA));
         when(platformDetectionService.detectPlatform("https://leetcode.com/problems/two-sum/")).thenReturn("LeetCode");
@@ -95,7 +94,7 @@ class ProblemServiceTest {
         ProblemResponse response = problemService.createProblem(1L, request);
 
         assertNotNull(response);
-        assertEquals("Two Sum", response.getTitle());
+        assertEquals(problemA.getTitle(), response.getTitle());
         assertEquals("LeetCode", response.getPlatform());
         assertEquals(Category.DSA, response.getCategory());
         assertEquals("Arrays", response.getTopic());
@@ -111,7 +110,7 @@ class ProblemServiceTest {
 
         ProblemResponse response = problemService.getProblemById(1L, 100L);
         assertNotNull(response);
-        assertEquals("Two Sum", response.getTitle());
+        assertEquals(problemA.getTitle(), response.getTitle());
     }
 
     @Test
@@ -155,7 +154,8 @@ class ProblemServiceTest {
     @DisplayName("Owner can update their problem and trigger platform re-detection on URL change")
     void testOwnerCanUpdate() {
         when(problemRepository.findById(100L)).thenReturn(Optional.of(problemA));
-        when(platformDetectionService.detectPlatform("https://codeforces.com/problemset/problem/1/A")).thenReturn("Codeforces");
+        when(platformDetectionService.detectPlatform("https://codeforces.com/problemset/problem/1/A"))
+                .thenReturn("Codeforces");
         when(problemRepository.save(any(Problem.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         UpdateProblemRequest updateReq = new UpdateProblemRequest();
