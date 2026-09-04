@@ -414,7 +414,7 @@ public class CodeCatService {
 
         } catch (AiServiceUnavailableException ex) {
             throw ex;
-        } catch (java.net.http.HttpConnectTimeoutException | java.net.http.HttpTimeoutException ex) {
+        } catch (java.net.http.HttpTimeoutException ex) {
             logger.error("Gemini API timeout: {}", ex.getMessage());
             throw new AiServiceUnavailableException("CodeCat AI provider request timed out. Please check server connectivity and try again.", ex);
         } catch (Exception ex) {

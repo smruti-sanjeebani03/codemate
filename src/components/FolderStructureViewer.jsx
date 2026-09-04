@@ -88,10 +88,10 @@ export const FolderStructureViewer = () => {
               <div>├── <span className="text-amber-300">.env.example</span> <span className="text-slate-500"># VITE_API_BASE_URL</span></div>
               <div>└── src/</div>
               <div className="pl-4">├── <span className="text-blue-300">main.jsx</span> &amp; <span className="text-blue-300">App.jsx</span></div>
-              <div className="pl-4">├── config/<span className="text-emerald-400">api.ts</span> <span className="text-slate-500"># Centralized resolver</span></div>
+              <div className="pl-4">├── config/<span className="text-emerald-400">api.js</span> <span className="text-slate-500"># Centralized resolver</span></div>
               <div className="pl-4">├── services/</div>
-              <div className="pl-8">├── <span className="text-emerald-400">apiClient.ts</span> <span className="text-slate-500"># Fetch wrapper</span></div>
-              <div className="pl-8">└── <span className="text-emerald-400">healthService.ts</span> <span className="text-slate-500"># Health check endpoint</span></div>
+              <div className="pl-8">├── <span className="text-emerald-400">apiClient.js</span> <span className="text-slate-500"># Fetch wrapper</span></div>
+              <div className="pl-8">└── <span className="text-emerald-400">healthService.js</span> <span className="text-slate-500"># Health check endpoint</span></div>
               <div className="pl-4">├── components/</div>
               <div className="pl-8">├── <span className="text-blue-300">EntityArchitectureViewer.jsx</span> <span className="text-emerald-400">[Part 2]</span></div>
               <div className="pl-8">├── <span className="text-blue-300">CategoryLogicDsaViewer.jsx</span> <span className="text-emerald-400">[Part 2]</span></div>

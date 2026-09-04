@@ -6,7 +6,7 @@
  * and production deployments (e.g. Render backend URL).
  */
 
-const getApiBaseUrl = (): string => {
+const getApiBaseUrl = () => {
   // 1. Check client-side Vite environment variable (e.g. Render backend URL: https://<backend-name>.onrender.com)
   const envUrl = import.meta.env.VITE_API_BASE_URL;
   if (envUrl && typeof envUrl === 'string' && envUrl.trim() !== '') {
@@ -33,9 +33,9 @@ export const API_CONFIG = {
   },
   TIMEOUT_MS: 8000,
   APP_ENV: import.meta.env.VITE_APP_ENV || (import.meta.env.DEV ? 'development' : 'production'),
-} as const;
+};
 
-export const buildApiUrl = (endpoint: string): string => {
+export const buildApiUrl = (endpoint) => {
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   return `${API_CONFIG.BASE_URL}${cleanEndpoint}`;
 };

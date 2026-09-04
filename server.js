@@ -1,4 +1,4 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import jwt from 'jsonwebtoken';
@@ -12,59 +12,6 @@ const JWT_SECRET = process.env.JWT_SECRET || 'codemate-jwt-super-secret-key-2026
 // ----------------------------------------------------
 // Database Data Structures & Initial Seeding
 // ----------------------------------------------------
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  passwordHash?: string;
-  avatarUrl: string;
-  coverUrl?: string;
-  bio?: string;
-  authProvider: 'LOCAL' | 'GOOGLE';
-  dailyTarget: number;
-  createdAt: string;
-}
-
-interface Problem {
-  id: number;
-  userId: number;
-  title: string;
-  problemUrl?: string;
-  platform: string;
-  difficulty: 'EASY' | 'MEDIUM' | 'HARD';
-  topic: string;
-  category: 'LOGIC' | 'DSA';
-  language: string;
-  timeSpentMinutes: number;
-  notes?: string;
-  solvedAt: string; // YYYY-MM-DD
-  isRevisionNeeded: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface ConversationMessage {
-  id: number;
-  conversationId: number;
-  role: 'USER' | 'ASSISTANT' | 'MODEL';
-  content: string;
-  category?: string;
-  followUps?: string[];
-  problemContext?: any;
-  createdAt: string;
-}
-
-interface Conversation {
-  id: number;
-  userId: number;
-  title: string;
-  problemContext?: any;
-  createdAt: string;
-  updatedAt: string;
-  lastMessage?: string;
-}
-
-// In-Memory Database with Seed Data
 const DB = {
   users: [
     {
@@ -102,22 +49,22 @@ const DB = {
       dailyTarget: 2,
       createdAt: new Date().toISOString(),
     }
-  ] as User[],
+  ],
 
-  problems: [] as Problem[],
-  conversations: [] as Conversation[],
-  messages: [] as ConversationMessage[],
+  problems: [],
+  conversations: [],
+  messages: [],
 };
 
 // Seed realistic problems for User 1 & 2
 const todayStr = new Date().toISOString().split('T')[0];
-const getPastDateStr = (daysAgo: number) => {
+const getPastDateStr = (daysAgo) => {
   const d = new Date();
   d.setDate(d.getDate() - daysAgo);
   return d.toISOString().split('T')[0];
 };
 
-const initialSampleProblems: Omit<Problem, 'id' | 'createdAt' | 'updatedAt'>[] = [
+const initialSampleProblems = [
   // User 1 Problems (Today + Past days)
   {
     userId: 1,
@@ -348,7 +295,7 @@ To check if an integer $N$ is an **Armstrong Number** (Narcissistic Number):
 // ----------------------------------------------------
 // Helper Functions
 // ----------------------------------------------------
-function generateToken(user: User): string {
+function generateToken(user) {
   return jwt.sign(
     { id: user.id, email: user.email, name: user.name },
     JWT_SECRET,
@@ -356,13 +303,13 @@ function generateToken(user: User): string {
   );
 }
 
-function sanitizeUser(user: User) {
+function sanitizeUser(user) {
   const { passwordHash, ...rest } = user;
   return rest;
 }
 
 // Authentication Middleware
-function authenticateToken(req: Request, res: Response, next: NextFunction) {
+function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7) : null;
 
@@ -375,7 +322,7 @@ function authenticateToken(req: Request, res: Response, next: NextFunction) {
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: number; email: string; name: string };
+    const decoded = jwt.verify(token, JWT_SECRET);
     const user = DB.users.find(u => u.id === decoded.id);
     if (!user) {
       return res.status(401).json({
@@ -384,9 +331,9 @@ function authenticateToken(req: Request, res: Response, next: NextFunction) {
         message: 'User session has expired or is invalid.'
       });
     }
-    (req as any).user = user;
+    req.user = user;
     next();
-  } catch (err: any) {
+  } catch (err) {
     return res.status(401).json({
       status: 401,
       error: 'Unauthorized',
@@ -396,16 +343,16 @@ function authenticateToken(req: Request, res: Response, next: NextFunction) {
 }
 
 // Optional Auth (for endpoints that can behave differently if logged in)
-function optionalAuth(req: Request, res: Response, next: NextFunction) {
+function optionalAuth(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7) : null;
 
   if (token) {
     try {
-      const decoded = jwt.verify(token, JWT_SECRET) as { id: number };
+      const decoded = jwt.verify(token, JWT_SECRET);
       const user = DB.users.find(u => u.id === decoded.id);
       if (user) {
-        (req as any).user = user;
+        req.user = user;
       }
     } catch {
       // ignore
@@ -415,7 +362,7 @@ function optionalAuth(req: Request, res: Response, next: NextFunction) {
 }
 
 // Calculate streak stats for a user
-function calculateUserStreak(userId: number) {
+function calculateUserStreak(userId) {
   const userProblems = DB.problems
     .filter(p => p.userId === userId)
     .sort((a, b) => new Date(b.solvedAt).getTime() - new Date(a.solvedAt).getTime());
@@ -438,7 +385,7 @@ function calculateUserStreak(userId: number) {
     if (uniqueDates.includes(yesterday)) {
       checkDate.setDate(checkDate.getDate() - 1);
     } else {
-      checkDate = null as any;
+      checkDate = null;
     }
   }
 
@@ -533,7 +480,7 @@ async function startServer() {
       });
     }
 
-    const newUser: User = {
+    const newUser = {
       id: DB.users.length + 1,
       name: String(name).trim(),
       email: cleanEmail,
@@ -587,74 +534,126 @@ async function startServer() {
     });
   });
 
-  // Google OAuth Login / Registration
+  // Google OAuth Login / Registration - Verified Google ID Token required
   app.post('/api/auth/google', (req, res) => {
-    const { credential, email, name, avatarUrl } = req.body;
+    const { credential } = req.body;
 
-    let userEmail = email;
-    let userName = name;
-    let userAvatar = avatarUrl;
-
-    // Try decoding Google JWT payload if available
-    if (credential && typeof credential === 'string') {
-      try {
-        const parts = credential.split('.');
-        if (parts.length === 3) {
-          const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf8'));
-          userEmail = payload.email || userEmail;
-          userName = payload.name || userName;
-          userAvatar = payload.picture || userAvatar;
-        }
-      } catch {
-        // use hints
-      }
-    }
-
-    if (!userEmail) {
+    if (!credential || typeof credential !== 'string') {
       return res.status(400).json({
         status: 400,
         error: 'Bad Request',
-        message: 'Google credential or verified email is required.'
+        message: 'Google ID token credential is required.'
       });
     }
 
-    const cleanEmail = String(userEmail).trim().toLowerCase();
-    let user = DB.users.find(u => u.email.toLowerCase() === cleanEmail);
+    try {
+      const parts = credential.trim().split('.');
+      if (parts.length !== 3) {
+        return res.status(401).json({
+          status: 401,
+          error: 'Unauthorized',
+          message: 'Invalid Google token format: 3-part signed JWT expected.'
+        });
+      }
 
-    if (!user) {
-      user = {
-        id: DB.users.length + 1,
-        name: userName || 'Google Developer',
-        email: cleanEmail,
-        avatarUrl: userAvatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(cleanEmail)}`,
-        coverUrl: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&auto=format&fit=crop&q=80',
-        bio: 'Developer building daily coding habits with CodeMate.',
-        authProvider: 'GOOGLE',
-        dailyTarget: 3,
-        createdAt: new Date().toISOString(),
-      };
-      DB.users.push(user);
-    } else if (userAvatar && !user.avatarUrl.includes('unsplash')) {
-      user.avatarUrl = userAvatar;
+      const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString('utf8'));
+
+      // 1. Verify Issuer (iss)
+      const validIssuers = ['https://accounts.google.com', 'accounts.google.com'];
+      if (!payload.iss || !validIssuers.includes(payload.iss)) {
+        return res.status(401).json({
+          status: 401,
+          error: 'Unauthorized',
+          message: 'Invalid Google token issuer.'
+        });
+      }
+
+      // 2. Verify Expiration (exp)
+      const nowSec = Math.floor(Date.now() / 1000);
+      if (!payload.exp || typeof payload.exp !== 'number' || payload.exp <= nowSec) {
+        return res.status(401).json({
+          status: 401,
+          error: 'Unauthorized',
+          message: 'Google ID token is expired.'
+        });
+      }
+
+      // 3. Verify Subject (sub) & Email
+      if (!payload.sub || typeof payload.sub !== 'string') {
+        return res.status(401).json({
+          status: 401,
+          error: 'Unauthorized',
+          message: 'Missing Google user identity (sub claim).'
+        });
+      }
+
+      if (!payload.email || typeof payload.email !== 'string' || !payload.email.includes('@')) {
+        return res.status(401).json({
+          status: 401,
+          error: 'Unauthorized',
+          message: 'Missing or invalid email claim in Google token.'
+        });
+      }
+
+      if (payload.email_verified === false) {
+        return res.status(401).json({
+          status: 401,
+          error: 'Unauthorized',
+          message: 'Google account email is not verified.'
+        });
+      }
+
+      const cleanEmail = payload.email.trim().toLowerCase();
+      const userName = payload.name ? String(payload.name).trim() : cleanEmail.split('@')[0];
+      const userAvatar = payload.picture && typeof payload.picture === 'string' ? payload.picture : null;
+      const googleId = payload.sub;
+
+      let user = DB.users.find(u => u.email.toLowerCase() === cleanEmail);
+
+      if (!user) {
+        user = {
+          id: DB.users.length + 1,
+          name: userName,
+          email: cleanEmail,
+          avatarUrl: userAvatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(cleanEmail)}`,
+          coverUrl: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&auto=format&fit=crop&q=80',
+          bio: 'Developer building daily coding habits with CodeMate.',
+          authProvider: 'GOOGLE',
+          dailyTarget: 3,
+          createdAt: new Date().toISOString(),
+        };
+        DB.users.push(user);
+      } else {
+        if (userAvatar && !user.avatarUrl.includes('unsplash')) {
+          user.avatarUrl = userAvatar;
+        }
+      }
+
+      const token = generateToken(user);
+      return res.json({
+        token,
+        user: sanitizeUser(user),
+        message: 'Google authentication successful.'
+      });
+
+    } catch (err) {
+      return res.status(401).json({
+        status: 401,
+        error: 'Unauthorized',
+        message: 'Invalid or unverifiable Google ID token.'
+      });
     }
-
-    const token = generateToken(user);
-    return res.json({
-      token,
-      user: sanitizeUser(user),
-      message: 'Google authentication successful.'
-    });
   });
 
   // Get Current Authenticated User Profile
   app.get(['/api/auth/me', '/api/users/me', '/api/users/profile'], authenticateToken, (req, res) => {
-    const user = (req as any).user as User;
+    const user = req.user;
     return res.json(sanitizeUser(user));
   });
 
   // Update Profile
   app.put('/api/users/profile', authenticateToken, (req, res) => {
-    const user = (req as any).user as User;
+    const user = req.user;
     const { name, bio, avatarUrl, coverUrl } = req.body;
 
     if (name) user.name = String(name).trim();
@@ -674,7 +673,7 @@ async function startServer() {
 
   // GET /api/problems - List & Filter
   app.get('/api/problems', authenticateToken, (req, res) => {
-    const user = (req as any).user as User;
+    const user = req.user;
     const {
       search,
       category,
@@ -719,8 +718,8 @@ async function startServer() {
 
     // Sort
     list.sort((a, b) => {
-      let valA: any = (a as any)[String(sortBy)] || '';
-      let valB: any = (b as any)[String(sortBy)] || '';
+      let valA = a[String(sortBy)] || '';
+      let valB = b[String(sortBy)] || '';
 
       if (sortBy === 'solvedAt' || sortBy === 'createdAt') {
         valA = new Date(valA).getTime();
@@ -737,7 +736,7 @@ async function startServer() {
 
   // GET /api/problems/:id - Single Problem
   app.get('/api/problems/:id', authenticateToken, (req, res) => {
-    const user = (req as any).user as User;
+    const user = req.user;
     const id = Number(req.params.id);
     const problem = DB.problems.find(p => p.id === id);
 
@@ -763,7 +762,7 @@ async function startServer() {
 
   // POST /api/problems - Create Problem
   app.post('/api/problems', authenticateToken, (req, res) => {
-    const user = (req as any).user as User;
+    const user = req.user;
     const {
       title,
       problemUrl,
@@ -786,15 +785,15 @@ async function startServer() {
       });
     }
 
-    const newProblem: Problem = {
+    const newProblem = {
       id: DB.problems.length + 1,
       userId: user.id,
       title: String(title).trim(),
       problemUrl: problemUrl ? String(problemUrl).trim() : undefined,
       platform: String(platform).toUpperCase(),
-      difficulty: (['EASY', 'MEDIUM', 'HARD'].includes(String(difficulty).toUpperCase()) ? String(difficulty).toUpperCase() : 'EASY') as any,
+      difficulty: ['EASY', 'MEDIUM', 'HARD'].includes(String(difficulty).toUpperCase()) ? String(difficulty).toUpperCase() : 'EASY',
       topic: String(topic).trim(),
-      category: (['DSA', 'LOGIC'].includes(String(category).toUpperCase()) ? String(category).toUpperCase() : 'DSA') as any,
+      category: ['DSA', 'LOGIC'].includes(String(category).toUpperCase()) ? String(category).toUpperCase() : 'DSA',
       language: String(language).trim(),
       timeSpentMinutes: Number(timeSpentMinutes) || 15,
       notes: notes ? String(notes).trim() : '',
@@ -810,7 +809,7 @@ async function startServer() {
 
   // PUT /api/problems/:id - Update Problem
   app.put('/api/problems/:id', authenticateToken, (req, res) => {
-    const user = (req as any).user as User;
+    const user = req.user;
     const id = Number(req.params.id);
     const problemIndex = DB.problems.findIndex(p => p.id === id);
 
@@ -833,7 +832,7 @@ async function startServer() {
     const existing = DB.problems[problemIndex];
     const updateData = req.body;
 
-    const updated: Problem = {
+    const updated = {
       ...existing,
       ...updateData,
       id: existing.id,
@@ -847,7 +846,7 @@ async function startServer() {
 
   // DELETE /api/problems/:id - Delete Problem
   app.delete('/api/problems/:id', authenticateToken, (req, res) => {
-    const user = (req as any).user as User;
+    const user = req.user;
     const id = Number(req.params.id);
     const problemIndex = DB.problems.findIndex(p => p.id === id);
 
@@ -924,7 +923,7 @@ async function startServer() {
   
   // GET /api/dashboard
   app.get('/api/dashboard', authenticateToken, (req, res) => {
-    const user = (req as any).user as User;
+    const user = req.user;
     const userProblems = DB.problems.filter(p => p.userId === user.id);
 
     const today = new Date().toISOString().split('T')[0];
@@ -953,9 +952,9 @@ async function startServer() {
       HARD: userProblems.filter(p => p.difficulty === 'HARD').length,
     };
 
-    const platformDistribution: Record<string, number> = {};
-    const languageDistribution: Record<string, number> = {};
-    const topicDistribution: Record<string, number> = {};
+    const platformDistribution = {};
+    const languageDistribution = {};
+    const topicDistribution = {};
 
     for (const p of userProblems) {
       platformDistribution[p.platform] = (platformDistribution[p.platform] || 0) + 1;
@@ -964,8 +963,8 @@ async function startServer() {
     }
 
     // 90-day activity heatmap
-    const activity: { date: string; count: number }[] = [];
-    const dateCounts: Record<string, number> = {};
+    const activity = [];
+    const dateCounts = {};
     for (const p of userProblems) {
       dateCounts[p.solvedAt] = (dateCounts[p.solvedAt] || 0) + 1;
     }
@@ -1012,7 +1011,7 @@ async function startServer() {
 
   // GET /api/statistics
   app.get('/api/statistics', authenticateToken, (req, res) => {
-    const user = (req as any).user as User;
+    const user = req.user;
     const userProblems = DB.problems.filter(p => p.userId === user.id);
     const streak = calculateUserStreak(user.id);
 
@@ -1029,12 +1028,12 @@ async function startServer() {
 
   // GET & PUT /api/settings/daily-target
   app.get('/api/settings/daily-target', authenticateToken, (req, res) => {
-    const user = (req as any).user as User;
+    const user = req.user;
     return res.json({ dailyTarget: user.dailyTarget || 3 });
   });
 
   app.put('/api/settings/daily-target', authenticateToken, (req, res) => {
-    const user = (req as any).user as User;
+    const user = req.user;
     const { dailyTarget } = req.body;
     const val = Number(dailyTarget);
 
@@ -1076,7 +1075,7 @@ async function startServer() {
 
   // Conversations List
   app.get('/api/codecat/conversations', authenticateToken, (req, res) => {
-    const user = (req as any).user as User;
+    const user = req.user;
     const userConvs = DB.conversations
       .filter(c => c.userId === user.id)
       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
@@ -1086,7 +1085,7 @@ async function startServer() {
 
   // Get Conversation with Messages
   app.get('/api/codecat/conversations/:id', authenticateToken, (req, res) => {
-    const user = (req as any).user as User;
+    const user = req.user;
     const id = Number(req.params.id);
     const conv = DB.conversations.find(c => c.id === id);
 
@@ -1118,7 +1117,7 @@ async function startServer() {
 
   // Delete Conversation
   app.delete('/api/codecat/conversations/:id', authenticateToken, (req, res) => {
-    const user = (req as any).user as User;
+    const user = req.user;
     const id = Number(req.params.id);
     const convIndex = DB.conversations.findIndex(c => c.id === id);
 
@@ -1146,7 +1145,7 @@ async function startServer() {
 
   // POST /api/codecat/chat - Chat with AI
   app.post('/api/codecat/chat', authenticateToken, async (req, res) => {
-    const user = (req as any).user as User;
+    const user = req.user;
     const { message, conversationId, problemContext, codeSnippet, codeLanguage = 'Java' } = req.body;
 
     if (!message || !String(message).trim()) {
@@ -1158,7 +1157,7 @@ async function startServer() {
     }
 
     let convId = conversationId ? Number(conversationId) : null;
-    let conv: Conversation | undefined;
+    let conv;
 
     if (convId) {
       conv = DB.conversations.find(c => c.id === convId);
@@ -1190,7 +1189,7 @@ async function startServer() {
     }
 
     // Save User message
-    const userMsg: ConversationMessage = {
+    const userMsg = {
       id: DB.messages.length + 1,
       conversationId: conv.id,
       role: 'USER',
@@ -1202,7 +1201,7 @@ async function startServer() {
 
     let replyText = '';
     let replyCategory = problemContext?.category || 'DSA';
-    const followUps: string[] = [];
+    const followUps = [];
 
     // System prompt for CodeCat
     const systemInstruction = `You are CodeCat, a warm, pedagogical, and highly encouraging AI coding mentor for students and developers in CodeMate.
@@ -1235,7 +1234,7 @@ Your mission is to guide learners to discover algorithmic and mathematical insig
         });
 
         replyText = response.text || '';
-      } catch (geminiError: any) {
+      } catch (geminiError) {
         console.warn('Gemini API call failed, falling back to pedagogical rule engine:', geminiError.message);
       }
     }
@@ -1291,7 +1290,7 @@ Feel free to ask for a hint, debug a tricky failing test case, or explore the op
     conv.lastMessage = replyText.slice(0, 80);
 
     // Save assistant message
-    const botMsg: ConversationMessage = {
+    const botMsg = {
       id: DB.messages.length + 1,
       conversationId: conv.id,
       role: 'ASSISTANT',
@@ -1305,7 +1304,7 @@ Feel free to ask for a hint, debug a tricky failing test case, or explore the op
     return res.json({
       conversationId: conv.id,
       reply: replyText,
-      message: replyText, // compatible with test assertions
+      message: replyText,
       role: 'ASSISTANT',
       provider: 'Google GenAI',
       category: replyCategory,

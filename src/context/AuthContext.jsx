@@ -126,12 +126,12 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // Sign in with Google
-  const loginWithGoogle = useCallback(async (credential, hints = {}) => {
+  // Sign in with Google (Verified ID Token)
+  const loginWithGoogle = useCallback(async (credential) => {
     setError(null);
     setLoading(true);
     try {
-      const res = await authService.loginWithGoogle(credential, hints);
+      const res = await authService.loginWithGoogle(credential);
       setUser(res.user);
       setToken(res.token);
       return res;

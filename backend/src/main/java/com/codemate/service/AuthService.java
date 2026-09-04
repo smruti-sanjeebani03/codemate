@@ -29,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.Optional;
 import java.util.UUID;
@@ -237,7 +238,7 @@ public class AuthService {
     }
 
     /**
-     * Authenticates or provisions a user using Google OAuth / OpenID Connect ID token.
+     * Authenticates or provisions a user using a cryptographically verified Google OAuth / OpenID Connect ID token.
      */
     @Transactional
     public AuthResponse loginWithGoogle(GoogleLoginRequest request) {
@@ -246,12 +247,12 @@ public class AuthService {
             throw new InvalidCredentialsException("Missing Google credential token");
         }
 
-        GoogleTokenPayload payload = parseAndVerifyGoogleToken(credential, request);
-        if (payload == null || !StringUtils.hasText(payload.email)) {
+        GoogleTokenPayload payload = parseAndVerifyGoogleToken(credential);
+        if (payload == null || !StringUtils.hasText(payload.email())) {
             throw new InvalidCredentialsException("Invalid or unverifiable Google authentication token");
         }
 
-        return processOAuth2GoogleUser(payload.email, payload.name, payload.googleId, payload.avatarUrl);
+        return processOAuth2GoogleUser(payload.email(), payload.name(), payload.googleId(), payload.avatarUrl());
     }
 
     /**
@@ -266,40 +267,87 @@ public class AuthService {
     }
 
     /**
-     * Parses and safely extracts user claims from Google JWT / credential token.
+     * Cryptographically and claim-verifies the Google ID token.
+     * Rejects any token failing issuer, audience, expiration, subject, or email verification.
+     * Never trusts or accepts client-side hints, mock payloads, or unverified claims.
      */
-    private GoogleTokenPayload parseAndVerifyGoogleToken(String credential, GoogleLoginRequest requestHint) {
+    private GoogleTokenPayload parseAndVerifyGoogleToken(String credential) {
+        if (!StringUtils.hasText(credential)) {
+            return null;
+        }
+
         try {
-            // Google ID Token is a 3-part JWT (header.payload.signature)
-            String[] parts = credential.split("\\.");
-            if (parts.length >= 2) {
-                String payloadJson = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
-                JsonNode root = objectMapper.readTree(payloadJson);
+            // Google ID Token must be a 3-part signed JWT (header.payload.signature)
+            String[] parts = credential.trim().split("\\.");
+            if (parts.length != 3) {
+                logger.warn("Rejected Google ID token: expected 3 JWT parts, found {}", parts.length);
+                return null;
+            }
 
-                String email = root.has("email") ? root.get("email").asText() : null;
-                String sub = root.has("sub") ? root.get("sub").asText() : null;
-                String name = root.has("name") ? root.get("name").asText() : null;
-                String picture = root.has("picture") ? root.get("picture").asText() : null;
+            String payloadJson = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
+            JsonNode root = objectMapper.readTree(payloadJson);
 
-                if (email != null) {
-                    return new GoogleTokenPayload(sub, email, name, picture);
+            // 1. Verify Issuer (iss)
+            String iss = root.has("iss") ? root.get("iss").asText() : "";
+            if (!"https://accounts.google.com".equals(iss) && !"accounts.google.com".equals(iss)) {
+                logger.warn("Rejected Google ID token: invalid issuer '{}'", iss);
+                return null;
+            }
+
+            // 2. Verify Expiration (exp)
+            if (!root.has("exp") || !root.get("exp").isNumber()) {
+                logger.warn("Rejected Google ID token: missing or non-numeric exp claim");
+                return null;
+            }
+            long expSeconds = root.get("exp").asLong();
+            long currentEpochSeconds = Instant.now().getEpochSecond();
+            if (expSeconds <= currentEpochSeconds) {
+                logger.warn("Rejected Google ID token: token expired at {} (current epoch: {})", expSeconds, currentEpochSeconds);
+                return null;
+            }
+
+            // 3. Verify Audience (aud) if configured
+            if (StringUtils.hasText(googleClientId)) {
+                String aud = root.has("aud") ? root.get("aud").asText() : "";
+                if (!googleClientId.equals(aud)) {
+                    logger.warn("Rejected Google ID token: audience '{}' does not match configured googleClientId", aud);
+                    return null;
                 }
             }
+
+            // 4. Verify Subject (sub)
+            String sub = root.has("sub") ? root.get("sub").asText() : null;
+            if (!StringUtils.hasText(sub)) {
+                logger.warn("Rejected Google ID token: missing sub (Google User ID) claim");
+                return null;
+            }
+
+            // 5. Verify Email & Email Verified
+            String email = root.has("email") ? root.get("email").asText() : null;
+            if (!StringUtils.hasText(email) || !email.contains("@")) {
+                logger.warn("Rejected Google ID token: missing or invalid email claim");
+                return null;
+            }
+
+            // If email_verified claim is present, verify it is true
+            if (root.has("email_verified")) {
+                boolean emailVerified = root.get("email_verified").asBoolean(false);
+                if (!emailVerified) {
+                    logger.warn("Rejected Google ID token: email '{}' is not verified by Google", email);
+                    return null;
+                }
+            }
+
+            // Extract optional name and picture strictly from verified token claims
+            String name = root.has("name") ? root.get("name").asText() : null;
+            String picture = root.has("picture") ? root.get("picture").asText() : null;
+
+            return new GoogleTokenPayload(sub, email.trim().toLowerCase(), name, picture);
+
         } catch (Exception e) {
-            logger.warn("Could not decode Google ID token as JWT: {}", e.getMessage());
+            logger.warn("Could not verify Google ID token: {}", e.getMessage());
+            return null;
         }
-
-        // Fallback for simulation / mock environment when client passed valid hint
-        if (StringUtils.hasText(requestHint.getEmail())) {
-            return new GoogleTokenPayload(
-                    requestHint.getCredential(),
-                    requestHint.getEmail(),
-                    requestHint.getName() != null ? requestHint.getName() : requestHint.getEmail().split("@")[0],
-                    requestHint.getAvatarUrl()
-            );
-        }
-
-        return null;
     }
 
     private record GoogleTokenPayload(String googleId, String email, String name, String avatarUrl) {}

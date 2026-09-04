@@ -1,31 +1,25 @@
 import { API_CONFIG, buildApiUrl } from '../config/api';
 
 export class ApiError extends Error {
-  constructor(
-    public status: number,
-    public statusText: string,
-    message: string,
-    public responseBody?: unknown
-  ) {
+  constructor(status, statusText, message, responseBody) {
     super(message);
     this.name = 'ApiError';
+    this.status = status;
+    this.statusText = statusText;
+    this.responseBody = responseBody;
   }
 }
 
 /**
  * Clean HTTP client with timeout, JSON parsing, and unified error handling.
  */
-export async function fetchWithTimeout<T>(
-  endpoint: string,
-  options: RequestInit = {},
-  timeoutMs: number = API_CONFIG.TIMEOUT_MS
-): Promise<T> {
+export async function fetchWithTimeout(endpoint, options = {}, timeoutMs = API_CONFIG.TIMEOUT_MS) {
   const url = buildApiUrl(endpoint);
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('codemate_jwt_token') : null;
-  const authHeaders: Record<string, string> = {};
+  const authHeaders = {};
   if (token) {
     authHeaders['Authorization'] = `Bearer ${token}`;
   }
@@ -60,8 +54,8 @@ export async function fetchWithTimeout<T>(
       );
     }
 
-    return (await response.json()) as T;
-  } catch (error: unknown) {
+    return await response.json();
+  } catch (error) {
     clearTimeout(timeoutId);
     if (error instanceof ApiError) {
       throw error;

@@ -163,17 +163,12 @@ export const authService = {
   },
 
   /**
-   * Sign in / Register with Google OAuth
+   * Sign in / Register with Google OAuth (Verified ID Token)
    */
-  async loginWithGoogle(credential, hints = {}) {
+  async loginWithGoogle(credential) {
     const data = await fetchWithTimeout(API_CONFIG.ENDPOINTS.AUTH_GOOGLE, {
       method: 'POST',
-      body: JSON.stringify({
-        credential,
-        email: hints.email,
-        name: hints.name,
-        avatarUrl: hints.avatarUrl,
-      }),
+      body: JSON.stringify({ credential }),
     });
 
     if (data && data.token) {
