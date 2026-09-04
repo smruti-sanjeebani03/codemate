@@ -157,7 +157,7 @@ export function CodeCatView({ initialProblemContext, onSelectProblem }) {
     setLoading(true);
     setError(null);
     try {
-      const history = await codeCatService.getConversationMessages(convId);
+      const history = await codeCatService.getConversation(convId);
       setMessages(history.messages || []);
       
       // If conversation has attached problem context, set it
